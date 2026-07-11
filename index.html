@@ -3,36 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stasiun Pemantauan Suhu & Kelembaban</title>
+<title>Dasbor Ceria: Inkubator Telur & Ruangan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <style>
-  :root{
-    --bg-deep: #0E1517;
-    --bg-panel: #161F22;
-    --bg-panel-raised: #1B2528;
-    --border-subtle: rgba(255,255,255,0.08);
-    --grid-line: rgba(255,255,255,0.045);
-    --text-primary: #EDF3F4;
-    --text-muted: #849499;
-    --text-faint: #56656A;
+  :root {
+    /* Palet Warna Ceria & Hangat */
+    --bg-deep: #FFFDF7; /* Krem sangat muda */
+    --bg-panel: #FFFFFF;
+    --bg-panel-raised: #FFF8F0;
+    --border-subtle: #FFE0B2;
+    --grid-line: rgba(255, 152, 0, 0.08);
+    --text-primary: #5D4037; /* Cokelat tua untuk keterbacaan */
+    --text-muted: #8D6E63;
+    --text-faint: #BCAAA4;
 
-    --accent-temp: #FF8B5E;
-    --accent-temp-soft: rgba(255,139,94,0.14);
-    --accent-humidity: #49C9E0;
-    --accent-humidity-soft: rgba(73,201,224,0.14);
+    --accent-temp: #FF7043; /* Oranye hangat */
+    --accent-temp-soft: rgba(255, 112, 67, 0.15);
+    --accent-humidity: #29B6F6; /* Biru air cerah */
+    --accent-humidity-soft: rgba(41, 182, 246, 0.15);
 
-    --zone-cool: #4F8FC7;
-    --zone-ok: #5FC17E;
-    --zone-hot: #E8664F;
-    --zone-dry: #D9A441;
-    --zone-humid: #4F9FE0;
+    --zone-cool: #4FC3F7;
+    --zone-ok: #81C784; /* Hijau alam */
+    --zone-hot: #E57373;
+    --zone-dry: #FFCA28;
+    --zone-humid: #26C6DA;
 
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
-    --font-body: 'Inter', system-ui, sans-serif;
+    --font-display: 'Nunito', system-ui, sans-serif;
+    --font-mono: 'Nunito', monospace; /* Tetap pakai Nunito agar serasi */
+    --font-body: 'Nunito', system-ui, sans-serif;
   }
 
   *{ box-sizing:border-box; }
@@ -40,10 +41,8 @@
   html,body{
     margin:0; padding:0;
     background-color: var(--bg-deep);
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 26px 26px;
+    background-image: radial-gradient(var(--border-subtle) 2px, transparent 2px);
+    background-size: 30px 30px;
     color: var(--text-primary);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -58,6 +57,20 @@
     gap: clamp(16px, 3vw, 28px);
   }
 
+  /* ---------- Animasi Lucu ---------- */
+  @keyframes bounceChick {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px) scale(1.05); }
+  }
+  @keyframes wobbleEgg {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+  }
+  @keyframes floatFeather {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(15deg); }
+  }
+
   /* ---------- Header ---------- */
   .topbar{
     display:flex;
@@ -65,173 +78,225 @@
     justify-content:space-between;
     flex-wrap:wrap;
     gap:12px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 20px;
+    border-bottom: 3px dashed var(--border-subtle);
   }
-  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:16px; }
   .brand-mark{
-    font-size: 28px;
+    font-size: 42px;
     line-height:1;
-    color: var(--accent-temp);
-    filter: drop-shadow(0 0 6px var(--accent-temp-soft));
+    animation: bounceChick 2s infinite ease-in-out;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
   }
   .brand-title{
     font-family: var(--font-display);
-    font-weight:600;
-    font-size: clamp(14px, 2vw, 17px);
-    letter-spacing: 0.06em;
+    font-weight:800;
+    font-size: clamp(18px, 2.5vw, 22px);
+    letter-spacing: 0.02em;
+    color: var(--accent-temp);
   }
   .brand-sub{
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-weight: 600;
+    font-size: 13px;
     color: var(--text-muted);
     margin-top: 2px;
   }
   .status{
     display:flex; align-items:center; gap:10px;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    background: #FFF;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 2px solid var(--border-subtle);
+  }
+  .live-egg{
+    font-size: 18px;
+    display: inline-block;
+    animation: wobbleEgg 1.5s infinite ease-in-out;
+  }
+  .live-text{ color: var(--zone-ok); font-weight:800; letter-spacing:0.05em; }
+  .clock{ color: var(--text-muted); }
+
+  /* ---------- Main tab switch ---------- */
+  .main-tab-switch{ display:flex; gap:12px; flex-wrap:wrap; justify-content: center; }
+  .main-tab-btn{
+    font-family: var(--font-display);
+    font-weight:800;
+    font-size: 15px;
     color: var(--text-muted);
+    background: var(--bg-panel);
+    border: 2px solid var(--border-subtle);
+    padding: 12px 28px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
   }
-  .live-dot{
-    width:8px; height:8px; border-radius:50%;
-    background: var(--zone-ok);
-    box-shadow: 0 0 0 0 rgba(95,193,126,0.6);
-    animation: pulse 2.2s infinite;
+  .main-tab-btn:hover{ 
+    transform: translateY(-2px);
+    border-color: var(--accent-temp);
+    color: var(--accent-temp);
   }
-  @keyframes pulse{
-    0%{ box-shadow: 0 0 0 0 rgba(95,193,126,0.55); }
-    70%{ box-shadow: 0 0 0 7px rgba(95,193,126,0); }
-    100%{ box-shadow: 0 0 0 0 rgba(95,193,126,0); }
+  .main-tab-btn.active{
+    background: var(--accent-temp);
+    color: #FFF;
+    border-color: var(--accent-temp);
+    box-shadow: 0 6px 16px var(--accent-temp-soft);
   }
-  .live-text{ color: var(--zone-ok); font-weight:600; letter-spacing:0.05em; }
-  .clock{ color: var(--text-primary); }
+
+  /* ---------- Views ---------- */
+  .view{ display:none; flex-direction:column; gap: clamp(16px, 3vw, 28px); }
+  .view.active{ display:flex; animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ---------- Gauges ---------- */
   .gauges-row{
     display:grid;
     grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-    gap: 16px;
+    gap: 20px;
   }
   .gauge-card{
     background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 18px 18px 16px;
+    border: 2px solid var(--border-subtle);
+    border-radius: 24px;
+    padding: 24px 20px 20px;
     display:flex;
     flex-direction:column;
     align-items:center;
+    box-shadow: 0 8px 24px rgba(141, 110, 99, 0.08);
+    position: relative;
+    overflow: hidden;
   }
+  /* Hiasan Bulu */
+  .gauge-card::before {
+    content: '🪶';
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    opacity: 0.2;
+    animation: floatFeather 3s infinite ease-in-out;
+  }
+  
   .gauge-card-head{
-    align-self:flex-start;
+    align-self:center;
     display:flex; align-items:center; gap:8px;
     margin-bottom: 4px;
+    background: var(--bg-panel-raised);
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
   }
-  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
-  .dot-temp{ background: var(--accent-temp); }
-  .dot-hum{ background: var(--accent-humidity); }
+  .dot{ font-size: 16px; }
   .gauge-label{
     font-family: var(--font-display);
-    font-weight:600;
-    font-size: 13px;
-    letter-spacing: 0.04em;
+    font-weight:800;
+    font-size: 14px;
     color: var(--text-primary);
+  }
+  .gauge-caption{
+    align-self:center;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-bottom: 12px;
   }
   .gauge-svg{ width: 100%; max-width: 260px; height: auto; margin-top: -6px; }
   .gauge-reading{
     display:flex; align-items:baseline; gap:6px;
-    margin-top: -18px;
+    margin-top: -24px;
   }
   .reading-value{
-    font-family: var(--font-mono);
-    font-weight:600;
-    font-size: clamp(30px, 5vw, 38px);
+    font-family: var(--font-display);
+    font-weight:800;
+    font-size: clamp(36px, 6vw, 44px);
     color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
+    text-shadow: 2px 2px 0px var(--bg-panel-raised);
   }
   .reading-unit{
-    font-family: var(--font-mono);
-    font-size: 15px;
+    font-weight:700;
+    font-size: 18px;
     color: var(--text-muted);
   }
-  .trend{ font-size: 13px; margin-left: 2px; }
+  .trend{ font-size: 18px; margin-left: 4px; font-weight: 900;}
   .trend.up{ color: var(--accent-temp); }
   .trend.down{ color: var(--accent-humidity); }
   .trend.flat{ color: var(--text-faint); }
 
   .gauge-stats{
-    display:flex; gap: 14px;
-    margin-top: 10px;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    display:flex; gap: 16px;
+    margin-top: 12px;
+    font-weight: 700;
+    font-size: 12px;
     color: var(--text-muted);
     flex-wrap: wrap;
     justify-content:center;
+    background: var(--bg-deep);
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px dashed var(--border-subtle);
   }
-  .gauge-stats b{ color: var(--text-primary); font-weight:600; }
+  .gauge-stats b{ color: var(--text-primary); font-weight:800; }
 
   /* ---------- Chart card ---------- */
-  .chart-card{
+  .chart-card, .pid-card{
     background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 18px clamp(12px, 2.5vw, 22px) 20px;
+    border: 2px solid var(--border-subtle);
+    border-radius: 24px;
+    padding: 24px clamp(16px, 3vw, 28px);
+    box-shadow: 0 8px 24px rgba(141, 110, 99, 0.08);
   }
   .chart-head{
     display:flex; align-items:flex-end; justify-content:space-between;
     flex-wrap:wrap; gap:10px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
   .eyebrow{
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.15em;
     color: var(--text-faint);
-    margin-bottom: 2px;
+    margin-bottom: 4px;
   }
   .chart-title{
     font-family: var(--font-display);
-    font-weight:600;
-    font-size: clamp(15px, 2.2vw, 18px);
+    font-weight:800;
+    font-size: clamp(16px, 2.5vw, 20px);
+    color: var(--accent-temp);
   }
   .legend{ display:flex; gap:16px; }
   .legend-item{
     display:flex; align-items:center; gap:6px;
-    font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-weight: 700;
+    font-size: 12px;
     color: var(--text-muted);
   }
 
   .range-switch{
-    display:inline-flex;
-    background: var(--bg-panel-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: 999px;
-    padding: 4px;
-    gap: 2px;
-    margin-bottom: 16px;
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
   }
   .range-btn{
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
+    font-weight: 700;
     font-size: 12px;
-    letter-spacing: 0.03em;
     color: var(--text-muted);
-    background: transparent;
-    border: none;
-    padding: 7px 16px;
-    border-radius: 999px;
+    background: var(--bg-panel-raised);
+    border: 2px solid transparent;
+    padding: 8px 18px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: all 0.2s ease;
   }
-  .range-btn:hover{ color: var(--text-primary); }
+  .range-btn:hover{ background: var(--border-subtle); color: var(--text-primary); }
   .range-btn.active{
-    background: var(--bg-deep);
+    background: var(--accent-temp-soft);
     color: var(--accent-temp);
-    box-shadow: inset 0 0 0 1px var(--border-subtle);
-  }
-  .range-btn:focus-visible{
-    outline: 2px solid var(--accent-humidity);
-    outline-offset: 2px;
+    border-color: var(--accent-temp);
   }
 
   .chart-wrap{
@@ -239,31 +304,59 @@
     height: clamp(220px, 34vw, 320px);
   }
 
+  /* ---------- PID panel ---------- */
+  .pid-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 420px));
+    gap: 20px;
+  }
+  .pid-block{
+    background: var(--bg-panel-raised);
+    border: 2px dashed var(--border-subtle);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .pid-block-head{
+    display:flex; align-items:center; gap:8px;
+    font-family: var(--font-display);
+    font-weight:800;
+    font-size: 15px;
+    margin-bottom: 16px;
+    color: var(--accent-temp);
+  }
+  .pid-const-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 18px; }
+  .pid-chip{
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: #FFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 6px 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .pid-chip b{ color: var(--accent-temp); font-weight:800; margin-left:6px; font-size: 14px;}
+  .pid-live-row{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom: 18px; }
+  .pid-live-item{ display:flex; flex-direction:column; gap:4px; }
+  .pid-live-label{ font-weight: 800; font-size:10px; letter-spacing:.05em; color: var(--text-faint); }
+  .pid-live-value{ font-weight:800; font-size:18px; color: var(--text-primary); }
+  
+  .pid-output-label{ display:flex; justify-content:space-between; font-weight: 700; font-size:12px; color: var(--text-muted); margin-bottom:8px; }
+  .pid-bar{ height:12px; border-radius:999px; background: #FFF; border:2px solid var(--border-subtle); overflow:hidden; }
+  .pid-bar-fill{ height:100%; border-radius:999px; width:0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .fill-temp{ background: linear-gradient(90deg, #FFB74D, #FF7043); }
+
   /* ---------- Footer ---------- */
   .footnote{
-    font-family: var(--font-body);
-    font-size: 12.5px;
+    font-weight: 600;
+    font-size: 13px;
     line-height: 1.6;
     color: var(--text-muted);
-    padding-top: 6px;
-    border-top: 1px solid var(--border-subtle);
-  }
-  .footnote code{
-    font-family: var(--font-mono);
-    background: var(--bg-panel-raised);
-    padding: 1px 6px;
-    border-radius: 4px;
-    color: var(--text-primary);
-    font-size: 11.5px;
+    padding-top: 16px;
+    border-top: 2px dashed var(--border-subtle);
+    text-align: center;
   }
 
-  @media (prefers-reduced-motion: reduce){
-    .live-dot{ animation: none; }
-  }
-
-  @media (max-width: 480px){
-    .legend{ display:none; }
-  }
 </style>
 </head>
 <body>
@@ -272,82 +365,146 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">◐</span>
+      <span class="brand-mark">🐣</span>
       <div>
-        <div class="brand-title">STASIUN PEMANTAUAN</div>
-        <div class="brand-sub">Suhu &amp; Kelembaban Ruangan</div>
+        <div class="brand-title">SMART HATCHERY</div>
+        <div class="brand-sub">Dasbor Inkubator Ceria 🥚✨</div>
       </div>
     </div>
     <div class="status">
-      <span class="live-dot"></span>
+      <span class="live-egg">🥚</span>
       <span class="live-text">LIVE</span>
       <span class="clock" id="clock">--:--:--</span>
     </div>
   </header>
 
-  <section class="gauges-row">
+  <div class="main-tab-switch" role="group" aria-label="Pilih tampilan">
+    <button class="main-tab-btn active" data-view="inkubator">🐣 Inkubator</button>
+    <button class="main-tab-btn" data-view="ruangan">🏠 Ruangan</button>
+  </div>
 
-    <div class="gauge-card">
-      <div class="gauge-card-head">
-        <span class="dot dot-temp"></span>
-        <span class="gauge-label">Suhu Udara</span>
-      </div>
-      <svg id="gauge-temp-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
-      <div class="gauge-reading">
-        <span id="reading-temp" class="reading-value">--.-</span><span class="reading-unit">°C</span>
-        <span id="trend-temp" class="trend"></span>
-      </div>
-      <div class="gauge-stats">
-        <span>Min <b id="stat-temp-min">--</b></span>
-        <span>Rata-rata <b id="stat-temp-avg">--</b></span>
-        <span>Maks <b id="stat-temp-max">--</b></span>
-      </div>
-    </div>
+  <div class="view active" id="view-inkubator">
 
-    <div class="gauge-card">
-      <div class="gauge-card-head">
-        <span class="dot dot-hum"></span>
-        <span class="gauge-label">Kelembaban Relatif</span>
+    <section class="gauges-row">
+      <div class="gauge-card">
+        <div class="gauge-card-head">
+          <span class="dot">🌡️</span>
+          <span class="gauge-label">Suhu Inkubator</span>
+        </div>
+        <div class="gauge-caption">Target 37,5°C &middot; Aman 37&ndash;38°C</div>
+        <svg id="gauge-inc-temp-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+        <div class="gauge-reading">
+          <span id="reading-inc-temp" class="reading-value">--.-</span><span class="reading-unit">°C</span>
+          <span id="trend-inc-temp" class="trend"></span>
+        </div>
+        <div class="gauge-stats">
+          <span>Min <b id="stat-inc-temp-min">--</b></span>
+          <span>Rata <b id="stat-inc-temp-avg">--</b></span>
+          <span>Maks <b id="stat-inc-temp-max">--</b></span>
+        </div>
       </div>
-      <svg id="gauge-hum-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
-      <div class="gauge-reading">
-        <span id="reading-hum" class="reading-value">--</span><span class="reading-unit">%</span>
-        <span id="trend-hum" class="trend"></span>
-      </div>
-      <div class="gauge-stats">
-        <span>Min <b id="stat-hum-min">--</b></span>
-        <span>Rata-rata <b id="stat-hum-avg">--</b></span>
-        <span>Maks <b id="stat-hum-max">--</b></span>
-      </div>
-    </div>
 
-  </section>
-
-  <section class="chart-card">
-    <div class="chart-head">
-      <div>
-        <div class="eyebrow">TREN</div>
-        <div class="chart-title">Grafik Suhu &amp; Kelembaban</div>
+      <div class="gauge-card">
+        <div class="gauge-card-head">
+          <span class="dot">💧</span>
+          <span class="gauge-label">Kelembaban</span>
+        </div>
+        <div class="gauge-caption">Target 60% &middot; Aman 50&ndash;70%</div>
+        <svg id="gauge-inc-hum-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+        <div class="gauge-reading">
+          <span id="reading-inc-hum" class="reading-value">--</span><span class="reading-unit">%</span>
+          <span id="trend-inc-hum" class="trend"></span>
+        </div>
+        <div class="gauge-stats">
+          <span>Min <b id="stat-inc-hum-min">--</b></span>
+          <span>Rata <b id="stat-inc-hum-avg">--</b></span>
+          <span>Maks <b id="stat-inc-hum-max">--</b></span>
+        </div>
       </div>
-      <div class="legend">
-        <span class="legend-item"><span class="dot dot-temp"></span>Suhu (°C)</span>
-        <span class="legend-item"><span class="dot dot-hum"></span>Kelembaban (%)</span>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-head">
+        <div>
+          <div class="eyebrow">TREN PERTUMBUHAN 📈</div>
+          <div class="chart-title">Grafik Riwayat Suhu &amp; Kelembaban</div>
+        </div>
+        <div class="legend">
+          <span class="legend-item">🌡️ Suhu (°C)</span>
+          <span class="legend-item">💧 Kelembaban (%)</span>
+        </div>
       </div>
-    </div>
 
-    <div class="range-switch" role="group" aria-label="Rentang waktu grafik">
-      <button class="range-btn active" data-range="60">1 Jam</button>
-      <button class="range-btn" data-range="360">6 Jam</button>
-      <button class="range-btn" data-range="1440">24 Jam</button>
-    </div>
+      <div class="range-switch" role="group" aria-label="Rentang waktu grafik">
+        <button class="range-btn active" data-range="60">1 Jam</button>
+        <button class="range-btn" data-range="720">12 Jam</button>
+        <button class="range-btn" data-range="1440">1 Hari</button>
+        <button class="range-btn" data-range="10080">7 Hari</button>
+        <button class="range-btn" data-range="30240">21 Hari</button>
+      </div>
 
-    <div class="chart-wrap">
-      <canvas id="mainChart"></canvas>
-    </div>
-  </section>
+      <div class="chart-wrap">
+        <canvas id="mainChart"></canvas>
+      </div>
+    </section>
+
+    <section class="pid-card">
+      <div class="chart-head">
+        <div>
+          <div class="eyebrow">KENDALI PINTAR 🧠</div>
+          <div class="chart-title">Status Pemanas (PID)</div>
+        </div>
+      </div>
+      <div class="pid-grid">
+        <div class="pid-block">
+          <div class="pid-block-head">🔥 Pemanas Utama</div>
+          <div class="pid-const-row">
+            <span class="pid-chip">Kp<b>8.00</b></span>
+            <span class="pid-chip">Ki<b>0.35</b></span>
+            <span class="pid-chip">Kd<b>1.50</b></span>
+          </div>
+          <div class="pid-live-row">
+            <div class="pid-live-item"><span class="pid-live-label">TARGET</span><span class="pid-live-value">37,5°C</span></div>
+            <div class="pid-live-item"><span class="pid-live-label">SAAT INI</span><span class="pid-live-value" id="pid-temp-pv">--</span></div>
+            <div class="pid-live-item"><span class="pid-live-label">SELISIH</span><span class="pid-live-value" id="pid-temp-err">--</span></div>
+          </div>
+          <div class="pid-output-label"><span>DAYA PEMANAS 🔥</span><span id="pid-temp-out-val">--%</span></div>
+          <div class="pid-bar"><div class="pid-bar-fill fill-temp" id="pid-temp-bar"></div></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="view" id="view-ruangan">
+    <section class="gauges-row">
+      <div class="gauge-card">
+        <div class="gauge-card-head">
+          <span class="dot">🌡️</span>
+          <span class="gauge-label">Suhu Ruangan Luar</span>
+        </div>
+        <svg id="gauge-room-temp-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+        <div class="gauge-reading">
+          <span id="reading-room-temp" class="reading-value">--.-</span><span class="reading-unit">°C</span>
+          <span id="trend-room-temp" class="trend"></span>
+        </div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-card-head">
+          <span class="dot">💧</span>
+          <span class="gauge-label">Kelembaban Ruangan</span>
+        </div>
+        <svg id="gauge-room-hum-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+        <div class="gauge-reading">
+          <span id="reading-room-hum" class="reading-value">--</span><span class="reading-unit">%</span>
+          <span id="trend-room-hum" class="trend"></span>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <footer class="footnote">
-    Data pada dasbor ini disimulasikan secara otomatis mengikuti pola harian yang wajar (naik di siang hari, turun di malam hari) agar tampilan grafik terasa hidup. Untuk menghubungkan sensor sungguhan, ganti isi fungsi <code>commitNewPoint()</code> di bagian skrip dengan pemanggilan API/endpoint perangkat Anda (mis. ESP32 + DHT22, atau layanan cloud IoT lainnya).
+    🐣 Semua data simulasi pada dasbor ini berjalan secara otomatis untuk mendemonstrasikan kestabilan PID menetaskan telur. Jangan lupa diintegrasikan dengan sensor sungguhan (seperti SHT31) jika sudah masuk tahap produksi nyata ya!
   </footer>
 
 </div>
@@ -361,10 +518,14 @@
   function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
   function round1(v){ return Math.round(v*10)/10; }
   function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-  function formatTime(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function formatLabel(d, rangeMinutes){
+    if (rangeMinutes <= 1440){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1);
+  }
 
   // ---------- Gauge geometry ----------
   const GAUGE_CX = 110, GAUGE_CY = 118, R_TRACK = 84, R_TICK_OUTER = 84, R_TICK_INNER = 72, R_NEEDLE = 66;
+  const NS = 'http://www.w3.org/2000/svg';
 
   function polar(cx, cy, r, angleDeg){
     const a = angleDeg * Math.PI / 180;
@@ -381,78 +542,110 @@
     return 'M '+s.x.toFixed(2)+' '+s.y.toFixed(2)+' A '+r+' '+r+' 0 '+largeArc+' 1 '+e.x.toFixed(2)+' '+e.y.toFixed(2);
   }
 
-  const NS = 'http://www.w3.org/2000/svg';
+  // ---------- Setpoints ----------
+  const SETPOINT_TEMP = 37.5;
+  const SETPOINT_HUM = 60;
 
+  // ---------- Gauge configs ----------
   const GAUGES = {
-    temp: {
-      svgId: 'gauge-temp-svg', needleId: 'needle-temp',
+    incTemp: {
+      svgId: 'gauge-inc-temp-svg', needleId: 'needle-inc-temp',
+      min: 34, max: 41, majorStep: 1, setpoint: SETPOINT_TEMP,
+      zones: [
+        { from:34, to:37, color:'--zone-cool' },
+        { from:37, to:38, color:'--zone-ok' },
+        { from:38, to:41, color:'--zone-hot' }
+      ]
+    },
+    incHum: {
+      svgId: 'gauge-inc-hum-svg', needleId: 'needle-inc-hum',
+      min: 30, max: 90, majorStep: 10, setpoint: SETPOINT_HUM,
+      zones: [
+        { from:30, to:50, color:'--zone-dry' },
+        { from:50, to:70, color:'--zone-ok' },
+        { from:70, to:90, color:'--zone-humid' }
+      ]
+    },
+    roomTemp: {
+      svgId: 'gauge-room-temp-svg', needleId: 'needle-room-temp',
       min: 0, max: 50, majorStep: 10,
       zones: [
-        { from:0,  to:15, color: cssVarSafe('--zone-cool') },
-        { from:15, to:28, color: cssVarSafe('--zone-ok') },
-        { from:28, to:50, color: cssVarSafe('--zone-hot') },
-      ],
+        { from:0,  to:15, color:'--zone-cool' },
+        { from:15, to:28, color:'--zone-ok' },
+        { from:28, to:50, color:'--zone-hot' }
+      ]
     },
-    hum: {
-      svgId: 'gauge-hum-svg', needleId: 'needle-hum',
+    roomHum: {
+      svgId: 'gauge-room-hum-svg', needleId: 'needle-room-hum',
       min: 0, max: 100, majorStep: 20,
       zones: [
-        { from:0,  to:30,  color: cssVarSafe('--zone-dry') },
-        { from:30, to:60,  color: cssVarSafe('--zone-ok') },
-        { from:60, to:100, color: cssVarSafe('--zone-humid') },
-      ],
+        { from:0,  to:30,  color:'--zone-dry' },
+        { from:30, to:60,  color:'--zone-ok' },
+        { from:60, to:100, color:'--zone-humid' }
+      ]
     }
   };
 
-  // cssVar() needs the DOM ready; defer actual color resolution to build time instead
-  function cssVarSafe(name){ return name; } // placeholder replaced at build time below
-
   function buildGauge(svgEl, cfg){
-    // resolve placeholder colors now that DOM/styles are ready
-    cfg.zones.forEach(z => { z.color = cssVar(z.color); });
-
-    cfg.zones.forEach(z => {
+    cfg.zones.forEach(function(z){
       const a1 = valueToAngle(z.from, cfg.min, cfg.max);
       const a2 = valueToAngle(z.to, cfg.min, cfg.max);
       const path = document.createElementNS(NS, 'path');
       path.setAttribute('d', describeArc(GAUGE_CX, GAUGE_CY, R_TRACK, a1, a2));
       path.setAttribute('fill', 'none');
-      path.setAttribute('stroke-width', '14');
-      path.setAttribute('style', 'stroke:'+z.color+'; opacity:0.85');
+      path.setAttribute('stroke-width', '16'); /* Dipertebal agar lebih bulat */
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('style', 'stroke:'+cssVar(z.color)+'; opacity:0.9');
       svgEl.appendChild(path);
     });
 
     for (let v = cfg.min; v <= cfg.max; v += cfg.majorStep){
       const ang = valueToAngle(v, cfg.min, cfg.max);
-      const p1 = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+6, ang);
+      const p1 = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+10, ang);
       const p2 = polar(GAUGE_CX, GAUGE_CY, R_TICK_INNER-4, ang);
       const tick = document.createElementNS(NS, 'line');
       tick.setAttribute('x1', p1.x.toFixed(2)); tick.setAttribute('y1', p1.y.toFixed(2));
       tick.setAttribute('x2', p2.x.toFixed(2)); tick.setAttribute('y2', p2.y.toFixed(2));
-      tick.setAttribute('style', 'stroke:var(--text-faint); stroke-width:2');
+      tick.setAttribute('style', 'stroke:var(--border-subtle); stroke-width:3; stroke-linecap:round');
       svgEl.appendChild(tick);
 
-      const lp = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+19, ang);
+      const lp = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+24, ang);
       const label = document.createElementNS(NS, 'text');
       label.setAttribute('x', lp.x.toFixed(2));
       label.setAttribute('y', (lp.y+4).toFixed(2));
       label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('style', 'fill:var(--text-faint); font-family:var(--font-mono); font-size:9px');
+      label.setAttribute('style', 'fill:var(--text-faint); font-weight:700; font-size:11px');
       label.textContent = v;
       svgEl.appendChild(label);
+    }
+
+    if (cfg.setpoint !== undefined && cfg.setpoint !== null){
+      const ang = valueToAngle(cfg.setpoint, cfg.min, cfg.max);
+      const p1 = polar(GAUGE_CX, GAUGE_CY, R_TRACK-12, ang);
+      const p2 = polar(GAUGE_CX, GAUGE_CY, R_TRACK+12, ang);
+      const marker = document.createElementNS(NS, 'line');
+      marker.setAttribute('x1', p1.x.toFixed(2)); marker.setAttribute('y1', p1.y.toFixed(2));
+      marker.setAttribute('x2', p2.x.toFixed(2)); marker.setAttribute('y2', p2.y.toFixed(2));
+      marker.setAttribute('style', 'stroke:var(--text-primary); stroke-width:4; stroke-linecap:round');
+      svgEl.appendChild(marker);
     }
 
     const needle = document.createElementNS(NS, 'line');
     needle.setAttribute('id', cfg.needleId);
     needle.setAttribute('x1', GAUGE_CX); needle.setAttribute('y1', GAUGE_CY);
     needle.setAttribute('x2', GAUGE_CX); needle.setAttribute('y2', GAUGE_CY-R_NEEDLE);
-    needle.setAttribute('style', 'stroke:var(--text-primary); stroke-width:3; stroke-linecap:round');
+    needle.setAttribute('style', 'stroke:var(--accent-temp); stroke-width:4; stroke-linecap:round'); /* Jarum lebih cerah */
     svgEl.appendChild(needle);
 
     const pivot = document.createElementNS(NS, 'circle');
-    pivot.setAttribute('cx', GAUGE_CX); pivot.setAttribute('cy', GAUGE_CY); pivot.setAttribute('r', 6);
-    pivot.setAttribute('style', 'fill:var(--text-primary)');
+    pivot.setAttribute('cx', GAUGE_CX); pivot.setAttribute('cy', GAUGE_CY); pivot.setAttribute('r', 8);
+    pivot.setAttribute('style', 'fill:var(--accent-temp)');
     svgEl.appendChild(pivot);
+    
+    const pivotInner = document.createElementNS(NS, 'circle');
+    pivotInner.setAttribute('cx', GAUGE_CX); pivotInner.setAttribute('cy', GAUGE_CY); pivotInner.setAttribute('r', 3);
+    pivotInner.setAttribute('style', 'fill:#FFF');
+    svgEl.appendChild(pivotInner);
   }
 
   function updateNeedle(cfg, value){
@@ -464,42 +657,67 @@
 
   // ---------- Data simulation ----------
   const ONE_MIN = 60*1000;
-  let tempDrift = 0, humDrift = 0;
-  let fullData = [];
-  let currentRange = 60; // minutes
+  const DAY = 24*60*ONE_MIN;
+
+  let incTempDrift = 0, incHumDrift = 0;
+  let roomTempDrift = 0, roomHumDrift = 0;
+
+  let incubatorData = [];
+  let roomHistory = [];
+  let currentRange = 60; 
   let chart = null;
 
-  function diurnalTemp(hourFraction){ return 25 + 6.5*Math.sin(2*Math.PI*(hourFraction-8)/24); }
-  function diurnalHum(hourFraction){ return 62 - 18*Math.sin(2*Math.PI*(hourFraction-8)/24); }
+  function incubatorReading(t){
+    incTempDrift += (Math.random()-0.5)*0.15 - incTempDrift*0.06;
+    incTempDrift = clamp(incTempDrift, -1.3, 1.3);
+    incHumDrift += (Math.random()-0.5)*1.0 - incHumDrift*0.06;
+    incHumDrift = clamp(incHumDrift, -16, 16);
 
-  function nextReading(t){
-    const d = new Date(t);
-    const hourFraction = d.getHours() + d.getMinutes()/60;
-
-    tempDrift += (Math.random()-0.5)*0.25;
-    tempDrift = clamp(tempDrift, -2.5, 2.5);
-    humDrift += (Math.random()-0.5)*0.6;
-    humDrift = clamp(humDrift, -6, 6);
-
-    const temp = round1(diurnalTemp(hourFraction) + tempDrift);
-    const hum = Math.round(clamp(diurnalHum(hourFraction) + humDrift, 20, 95));
+    const temp = round1(SETPOINT_TEMP + incTempDrift);
+    const hum = Math.round(clamp(SETPOINT_HUM + incHumDrift, 25, 95));
     return { t: t, temp: temp, hum: hum };
   }
 
-  function generateSeedData(nowMs){
-    const POINTS = 24*60;
-    const startMs = nowMs - (POINTS-1)*ONE_MIN;
+  function roomReading(t){
+    const d = new Date(t);
+    const hourFraction = d.getHours() + d.getMinutes()/60;
+
+    roomTempDrift += (Math.random()-0.5)*0.25;
+    roomTempDrift = clamp(roomTempDrift, -2.5, 2.5);
+    roomHumDrift += (Math.random()-0.5)*0.6;
+    roomHumDrift = clamp(roomHumDrift, -6, 6);
+
+    const tempBase = 27 + 4*Math.sin(2*Math.PI*(hourFraction-8)/24);
+    const humBase = 68 - 12*Math.sin(2*Math.PI*(hourFraction-8)/24);
+    const temp = round1(tempBase + roomTempDrift);
+    const hum = Math.round(clamp(humBase + roomHumDrift, 35, 95));
+    return { t: t, temp: temp, hum: hum };
+  }
+
+  function generateIncubatorSeed(nowMs){
     const data = [];
-    for (let i=0; i<POINTS; i++){
-      data.push(nextReading(startMs + i*ONE_MIN));
-    }
+    const seg1Start = nowMs - 21*DAY, seg1End = nowMs - 7*DAY, seg1Step = 20*ONE_MIN;
+    const seg2Start = seg1End, seg2End = nowMs - DAY, seg2Step = 5*ONE_MIN;
+    const seg3Start = seg2End, seg3End = nowMs, seg3Step = ONE_MIN;
+
+    let t;
+    for (t = seg1Start; t < seg1End; t += seg1Step) data.push(incubatorReading(t));
+    for (t = seg2Start; t < seg2End; t += seg2Step) data.push(incubatorReading(t));
+    for (t = seg3Start; t <= seg3End; t += seg3Step) data.push(incubatorReading(t));
+    return data;
+  }
+
+  function generateRoomSeed(nowMs){
+    const data = [];
+    const start = nowMs - 14*ONE_MIN;
+    for (let t = start; t <= nowMs; t += ONE_MIN) data.push(roomReading(t));
     return data;
   }
 
   function computeStats(arr, key){
     if (!arr.length) return { min:0, max:0, avg:0 };
     let min=Infinity, max=-Infinity, sum=0;
-    arr.forEach(d => { const v=d[key]; if(v<min)min=v; if(v>max)max=v; sum+=v; });
+    arr.forEach(function(d){ const v=d[key]; if(v<min)min=v; if(v>max)max=v; sum+=v; });
     return { min:min, max:max, avg: sum/arr.length };
   }
 
@@ -507,56 +725,79 @@
   function renderForRange(rangeMinutes){
     const now = Date.now();
     const cutoff = now - rangeMinutes*ONE_MIN;
-    const filtered = fullData.filter(d => d.t >= cutoff);
+    const filtered = incubatorData.filter(function(d){ return d.t >= cutoff; });
 
     if (chart){
-      chart.data.labels = filtered.map(d => formatTime(new Date(d.t)));
-      chart.data.datasets[0].data = filtered.map(d => d.temp);
-      chart.data.datasets[1].data = filtered.map(d => d.hum);
+      chart.data.labels = filtered.map(function(d){ return formatLabel(new Date(d.t), rangeMinutes); });
+      chart.data.datasets[0].data = filtered.map(function(d){ return d.temp; });
+      chart.data.datasets[1].data = filtered.map(function(d){ return d.hum; });
       chart.update('none');
     }
 
     const ts = computeStats(filtered, 'temp');
     const hs = computeStats(filtered, 'hum');
-    document.getElementById('stat-temp-min').textContent = ts.min.toFixed(1)+'°';
-    document.getElementById('stat-temp-avg').textContent = ts.avg.toFixed(1)+'°';
-    document.getElementById('stat-temp-max').textContent = ts.max.toFixed(1)+'°';
-    document.getElementById('stat-hum-min').textContent = Math.round(hs.min)+'%';
-    document.getElementById('stat-hum-avg').textContent = Math.round(hs.avg)+'%';
-    document.getElementById('stat-hum-max').textContent = Math.round(hs.max)+'%';
+    document.getElementById('stat-inc-temp-min').textContent = ts.min.toFixed(1)+'°';
+    document.getElementById('stat-inc-temp-avg').textContent = ts.avg.toFixed(1)+'°';
+    document.getElementById('stat-inc-temp-max').textContent = ts.max.toFixed(1)+'°';
+    document.getElementById('stat-inc-hum-min').textContent = Math.round(hs.min)+'%';
+    document.getElementById('stat-inc-hum-avg').textContent = Math.round(hs.avg)+'%';
+    document.getElementById('stat-inc-hum-max').textContent = Math.round(hs.max)+'%';
   }
 
-  function updateTrend(key, currentVal){
-    const idx = fullData.length - 6; // ~5 menit lalu
-    const prev = fullData[idx] ? fullData[idx][key] : currentVal;
+  function updateTrend(elKeySuffix, currentVal, arr, field, threshold){
+    const idx = arr.length - 6;
+    const prev = arr[idx] ? arr[idx][field] : currentVal;
     const diff = currentVal - prev;
-    const threshold = key === 'temp' ? 0.15 : 1;
-    const el = document.getElementById('trend-'+key);
+    const el = document.getElementById('trend-'+elKeySuffix);
     if (!el) return;
-    if (diff > threshold){ el.textContent = '▲'; el.className = 'trend up'; }
-    else if (diff < -threshold){ el.textContent = '▼'; el.className = 'trend down'; }
-    else { el.textContent = '▬'; el.className = 'trend flat'; }
+    if (diff > threshold){ el.textContent = '🐣'; el.className = 'trend up'; }
+    else if (diff < -threshold){ el.textContent = '💤'; el.className = 'trend down'; }
+    else { el.textContent = '🥚'; el.className = 'trend flat'; }
   }
 
   function liveTick(){
-    const last = fullData[fullData.length-1];
-    if (!last) return;
-    const jTemp = round1(last.temp + (Math.random()-0.5)*0.4);
-    const jHum = Math.round(clamp(last.hum + (Math.random()-0.5)*1.6, 0, 100));
+    const lastInc = incubatorData[incubatorData.length-1];
+    if (lastInc){
+      const jTemp = round1(lastInc.temp + (Math.random()-0.5)*0.25);
+      const jHum = Math.round(clamp(lastInc.hum + (Math.random()-0.5)*1.2, 0, 100));
 
-    document.getElementById('reading-temp').textContent = jTemp.toFixed(1);
-    document.getElementById('reading-hum').textContent = jHum;
-    updateNeedle(GAUGES.temp, jTemp);
-    updateNeedle(GAUGES.hum, jHum);
-    updateTrend('temp', jTemp);
-    updateTrend('hum', jHum);
+      document.getElementById('reading-inc-temp').textContent = jTemp.toFixed(1);
+      document.getElementById('reading-inc-hum').textContent = jHum;
+      updateNeedle(GAUGES.incTemp, jTemp);
+      updateNeedle(GAUGES.incHum, jHum);
+      updateTrend('inc-temp', jTemp, incubatorData, 'temp', 0.1);
+      updateTrend('inc-hum', jHum, incubatorData, 'hum', 1);
+
+      const errTemp = SETPOINT_TEMP - jTemp;
+      const outTemp = clamp(50 - errTemp*40, 0, 100);
+      document.getElementById('pid-temp-pv').textContent = jTemp.toFixed(1)+'°C';
+      document.getElementById('pid-temp-err').textContent = (errTemp>=0?'+':'')+errTemp.toFixed(2)+'°C';
+      document.getElementById('pid-temp-out-val').textContent = outTemp.toFixed(0)+'%';
+      document.getElementById('pid-temp-bar').style.width = outTemp.toFixed(0)+'%';
+    }
+
+    const lastRoom = roomHistory[roomHistory.length-1];
+    if (lastRoom){
+      const jRTemp = round1(lastRoom.temp + (Math.random()-0.5)*0.3);
+      const jRHum = Math.round(clamp(lastRoom.hum + (Math.random()-0.5)*1.4, 0, 100));
+      document.getElementById('reading-room-temp').textContent = jRTemp.toFixed(1);
+      document.getElementById('reading-room-hum').textContent = jRHum;
+      updateNeedle(GAUGES.roomTemp, jRTemp);
+      updateNeedle(GAUGES.roomHum, jRHum);
+      updateTrend('room-temp', jRTemp, roomHistory, 'temp', 0.15);
+      updateTrend('room-hum', jRHum, roomHistory, 'hum', 1);
+    }
   }
 
   function commitNewPoint(){
     const now = Date.now();
-    fullData.push(nextReading(now));
-    const keepFrom = now - 25*60*ONE_MIN;
-    fullData = fullData.filter(d => d.t >= keepFrom);
+    incubatorData.push(incubatorReading(now));
+    const keepFrom = now - (21*24*60 + 60)*ONE_MIN;
+    incubatorData = incubatorData.filter(function(d){ return d.t >= keepFrom; });
+
+    roomHistory.push(roomReading(now));
+    if (roomHistory.length > 20) roomHistory.shift();
+
     renderForRange(currentRange);
   }
 
@@ -568,10 +809,14 @@
 
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', function(){
-    buildGauge(document.getElementById('gauge-temp-svg'), GAUGES.temp);
-    buildGauge(document.getElementById('gauge-hum-svg'), GAUGES.hum);
+    buildGauge(document.getElementById('gauge-inc-temp-svg'), GAUGES.incTemp);
+    buildGauge(document.getElementById('gauge-inc-hum-svg'), GAUGES.incHum);
+    buildGauge(document.getElementById('gauge-room-temp-svg'), GAUGES.roomTemp);
+    buildGauge(document.getElementById('gauge-room-hum-svg'), GAUGES.roomHum);
 
-    fullData = generateSeedData(Date.now());
+    const now = Date.now();
+    incubatorData = generateIncubatorSeed(now);
+    roomHistory = generateRoomSeed(now);
 
     const ctx = document.getElementById('mainChart').getContext('2d');
     chart = new Chart(ctx, {
@@ -580,25 +825,25 @@
         labels: [],
         datasets: [
           {
-            label: 'Suhu (°C)',
+            label: 'Suhu Inkubator (°C)',
             data: [],
             borderColor: cssVar('--accent-temp'),
-            backgroundColor: 'rgba(255,139,94,0.12)',
-            borderWidth: 2,
+            backgroundColor: cssVar('--accent-temp-soft'),
+            borderWidth: 3, /* Garis lebih tebal */
             pointRadius: 0,
-            tension: 0.35,
+            tension: 0.4, /* Kurva lebih membulat (smooth) */
             fill: true,
             yAxisID: 'y'
           },
           {
-            label: 'Kelembaban (%)',
+            label: 'Kelembaban Inkubator (%)',
             data: [],
             borderColor: cssVar('--accent-humidity'),
             backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [4,3],
+            borderWidth: 3,
+            borderDash: [6,4],
             pointRadius: 0,
-            tension: 0.35,
+            tension: 0.4,
             fill: false,
             yAxisID: 'y1'
           }
@@ -612,33 +857,34 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: cssVar('--bg-panel-raised'),
+            backgroundColor: '#FFF',
             titleColor: cssVar('--text-primary'),
             bodyColor: cssVar('--text-primary'),
             borderColor: cssVar('--border-subtle'),
-            borderWidth: 1,
-            padding: 10,
-            titleFont: { family: "IBM Plex Mono", size: 11 },
-            bodyFont: { family: "IBM Plex Mono", size: 11 }
+            borderWidth: 2,
+            padding: 12,
+            titleFont: { family: "Nunito", size: 13, weight: 800 },
+            bodyFont: { family: "Nunito", size: 12, weight: 700 },
+            cornerRadius: 12
           }
         },
         scales: {
           x: {
-            ticks: { color: cssVar('--text-muted'), font: { family: "IBM Plex Mono", size: 10 }, maxTicksLimit: 8, autoSkip: true },
+            ticks: { color: cssVar('--text-muted'), font: { family: "Nunito", size: 11, weight:600 }, maxTicksLimit: 8, autoSkip: true },
             grid: { color: cssVar('--grid-line') }
           },
           y: {
             position: 'left',
-            suggestedMin: 0,
-            suggestedMax: 50,
-            ticks: { color: cssVar('--accent-temp'), font: { family: "IBM Plex Mono", size: 10 }, callback: function(v){ return v+'°'; } },
+            suggestedMin: 34,
+            suggestedMax: 41,
+            ticks: { color: cssVar('--accent-temp'), font: { family: "Nunito", size: 11, weight:700 }, callback: function(v){ return v+'°'; } },
             grid: { color: cssVar('--grid-line') }
           },
           y1: {
             position: 'right',
-            suggestedMin: 0,
-            suggestedMax: 100,
-            ticks: { color: cssVar('--accent-humidity'), font: { family: "IBM Plex Mono", size: 10 }, callback: function(v){ return v+'%'; } },
+            suggestedMin: 30,
+            suggestedMax: 90,
+            ticks: { color: cssVar('--accent-humidity'), font: { family: "Nunito", size: 11, weight:700 }, callback: function(v){ return v+'%'; } },
             grid: { drawOnChartArea: false }
           }
         }
@@ -647,13 +893,23 @@
 
     renderForRange(currentRange);
 
-    const last = fullData[fullData.length-1];
-    document.getElementById('reading-temp').textContent = last.temp.toFixed(1);
-    document.getElementById('reading-hum').textContent = Math.round(last.hum);
-    updateNeedle(GAUGES.temp, last.temp);
-    updateNeedle(GAUGES.hum, last.hum);
-    updateTrend('temp', last.temp);
-    updateTrend('hum', last.hum);
+    const lastInc = incubatorData[incubatorData.length-1];
+    document.getElementById('reading-inc-temp').textContent = lastInc.temp.toFixed(1);
+    document.getElementById('reading-inc-hum').textContent = Math.round(lastInc.hum);
+    updateNeedle(GAUGES.incTemp, lastInc.temp);
+    updateNeedle(GAUGES.incHum, lastInc.hum);
+    updateTrend('inc-temp', lastInc.temp, incubatorData, 'temp', 0.1);
+    updateTrend('inc-hum', lastInc.hum, incubatorData, 'hum', 1);
+
+    const lastRoom = roomHistory[roomHistory.length-1];
+    document.getElementById('reading-room-temp').textContent = lastRoom.temp.toFixed(1);
+    document.getElementById('reading-room-hum').textContent = Math.round(lastRoom.hum);
+    updateNeedle(GAUGES.roomTemp, lastRoom.temp);
+    updateNeedle(GAUGES.roomHum, lastRoom.hum);
+    updateTrend('room-temp', lastRoom.temp, roomHistory, 'temp', 0.15);
+    updateTrend('room-hum', lastRoom.hum, roomHistory, 'hum', 1);
+
+    liveTick();
 
     tickClock();
     setInterval(tickClock, 1000);
@@ -666,6 +922,16 @@
         btn.classList.add('active');
         currentRange = parseInt(btn.dataset.range, 10);
         renderForRange(currentRange);
+      });
+    });
+
+    document.querySelectorAll('.main-tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.main-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        const target = btn.dataset.view;
+        document.getElementById('view-inkubator').classList.toggle('active', target === 'inkubator');
+        document.getElementById('view-ruangan').classList.toggle('active', target === 'ruangan');
       });
     });
   });
