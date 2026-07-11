@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Monitoring Suhu & Kelembaban</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f4f6f8; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .btn-group button { padding: 8px 16px; margin-right: 5px; cursor: pointer; border: 1px solid #ddd; background: #fff; border-radius: 4px; }
+    .btn-group button.active { background: #007bff; color: white; border-color: #007bff; }
+    .status-cards { display: flex; gap: 20px; }
+    .status-cards .card { flex: 1; text-align: center; }
+    h1, h2 { color: #333; margin-top: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Dashboard Monitoring IoT</h1>
+    <div class="btn-group" id="filterButtons">
+      <button onclick="updateData(1)" class="active">1 Jam</button>
+      <button onclick="updateData(12)">12 Jam</button>
+      <button onclick="updateData(24)">1 Hari</button>
+      <button onclick="updateData(72)">3 Hari</button>
+      <button onclick="updateData(168)">7 Hari</button>
+      <button onclick="updateData(504)">21 Hari</button>
+    </div>
+  </div>
+
+  <div class="status-cards">
+    <div class="card">
+      <h3>Suhu Saat Ini</h3>
+      <h2 id="currentTemp">-- °C</h2>
+    </div>
+    <div class="card">
+      <h3>Kelembaban Saat Ini</h3>
+      <h2 id="currentHum">-- %</h2>
+    </div>
+  </div>
+
+  <div class="card">
+    <canvas id="sensorChart" height="100"></canvas>
+  </div>
+
+  <script>
+    // --- KONFIGURASI SUPABASE ---
+    const SUPABASE_URL = 'https://XYZ.supabase.co'; // Ganti Project URL kamu
+    const SUPABASE_KEY = 'KODE_ANON_KEY_KAMU';       // Ganti Anon Key kamu
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let myChart;
+
+    // Fungsi Inisialisasi Grafik
+    function initChart() {
+      const ctx = document.getElementById('sensorChart').getContext('2d');
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [
+          { label: 'Suhu (°C)', borderColor: '#ff6384', data: [], tension: 0.3 },
+          { label: 'Kelembaban (%)', borderColor: '#36a2eb', data: [], tension: 0.3 }
+        ]},
+        options: { responsive: true, scales: { x: { display: true }, y: { beginAtZero: false } } }
+      });
+    }
+
+    // Fungsi Ambil Data & Render Grafik sesuai jam yang dipilih
+    async function updateData(hoursAgo) {
+      // Ubah gaya tombol aktif
+      document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Hitung timestamp batas waktu di masa lalu
+      const timeLimit = new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
+
+      // Query ke Supabase: Ambil data dari timeLimit sampai sekarang, urutkan dari terlama
+      const { data, error } = await supabase
+        .from('sensor_data')
+        .select('*')
+        .gte('created_at', timeLimit)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching data:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Update kartu status saat ini (data terakhir)
+        const latest = data[data.length - 1];
+        document.getElementById('currentTemp').innerText = latest.suhu + ' °C';
+        document.getElementById('currentHum').innerText = latest.kelembaban + ' %';
+
+        // Update Data Grafik
+        const labels = data.map(d => new Date(d.created_at).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }));
+        const tempData = data.map(d => d.suhu);
+        const humData = data.map(d => d.kelembaban);
+
+        myChart.data.labels = labels;
+        myChart.data.datasets[0].data = tempData;
+        myChart.data.datasets[1].data = humData;
+        myChart.update();
+      }
+    }
+
+    // Jalankan saat web dibuka (Default: 1 Jam)
+    initChart();
+    updateData(1);
+  </script>
+</body>
+</html>
