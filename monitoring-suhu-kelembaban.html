@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stasiun Pemantauan Suhu & Kelembaban</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-deep: #0E1517;
+    --bg-panel: #161F22;
+    --bg-panel-raised: #1B2528;
+    --border-subtle: rgba(255,255,255,0.08);
+    --grid-line: rgba(255,255,255,0.045);
+    --text-primary: #EDF3F4;
+    --text-muted: #849499;
+    --text-faint: #56656A;
+
+    --accent-temp: #FF8B5E;
+    --accent-temp-soft: rgba(255,139,94,0.14);
+    --accent-humidity: #49C9E0;
+    --accent-humidity-soft: rgba(73,201,224,0.14);
+
+    --zone-cool: #4F8FC7;
+    --zone-ok: #5FC17E;
+    --zone-hot: #E8664F;
+    --zone-dry: #D9A441;
+    --zone-humid: #4F9FE0;
+
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background-color: var(--bg-deep);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 26px 26px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page{
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: clamp(16px, 4vw, 40px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 3vw, 28px);
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    font-size: 28px;
+    line-height:1;
+    color: var(--accent-temp);
+    filter: drop-shadow(0 0 6px var(--accent-temp-soft));
+  }
+  .brand-title{
+    font-family: var(--font-display);
+    font-weight:600;
+    font-size: clamp(14px, 2vw, 17px);
+    letter-spacing: 0.06em;
+  }
+  .brand-sub{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .status{
+    display:flex; align-items:center; gap:10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .live-dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--zone-ok);
+    box-shadow: 0 0 0 0 rgba(95,193,126,0.6);
+    animation: pulse 2.2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(95,193,126,0.55); }
+    70%{ box-shadow: 0 0 0 7px rgba(95,193,126,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(95,193,126,0); }
+  }
+  .live-text{ color: var(--zone-ok); font-weight:600; letter-spacing:0.05em; }
+  .clock{ color: var(--text-primary); }
+
+  /* ---------- Gauges ---------- */
+  .gauges-row{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 16px;
+  }
+  .gauge-card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .gauge-card-head{
+    align-self:flex-start;
+    display:flex; align-items:center; gap:8px;
+    margin-bottom: 4px;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot-temp{ background: var(--accent-temp); }
+  .dot-hum{ background: var(--accent-humidity); }
+  .gauge-label{
+    font-family: var(--font-display);
+    font-weight:600;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+  }
+  .gauge-svg{ width: 100%; max-width: 260px; height: auto; margin-top: -6px; }
+  .gauge-reading{
+    display:flex; align-items:baseline; gap:6px;
+    margin-top: -18px;
+  }
+  .reading-value{
+    font-family: var(--font-mono);
+    font-weight:600;
+    font-size: clamp(30px, 5vw, 38px);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .reading-unit{
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+  .trend{ font-size: 13px; margin-left: 2px; }
+  .trend.up{ color: var(--accent-temp); }
+  .trend.down{ color: var(--accent-humidity); }
+  .trend.flat{ color: var(--text-faint); }
+
+  .gauge-stats{
+    display:flex; gap: 14px;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    justify-content:center;
+  }
+  .gauge-stats b{ color: var(--text-primary); font-weight:600; }
+
+  /* ---------- Chart card ---------- */
+  .chart-card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 18px clamp(12px, 2.5vw, 22px) 20px;
+  }
+  .chart-head{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
+    margin-bottom: 14px;
+  }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    margin-bottom: 2px;
+  }
+  .chart-title{
+    font-family: var(--font-display);
+    font-weight:600;
+    font-size: clamp(15px, 2.2vw, 18px);
+  }
+  .legend{ display:flex; gap:16px; }
+  .legend-item{
+    display:flex; align-items:center; gap:6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  .range-switch{
+    display:inline-flex;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+  .range-btn{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+  .range-btn:hover{ color: var(--text-primary); }
+  .range-btn.active{
+    background: var(--bg-deep);
+    color: var(--accent-temp);
+    box-shadow: inset 0 0 0 1px var(--border-subtle);
+  }
+  .range-btn:focus-visible{
+    outline: 2px solid var(--accent-humidity);
+    outline-offset: 2px;
+  }
+
+  .chart-wrap{
+    position:relative;
+    height: clamp(220px, 34vw, 320px);
+  }
+
+  /* ---------- Footer ---------- */
+  .footnote{
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    padding-top: 6px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .footnote code{
+    font-family: var(--font-mono);
+    background: var(--bg-panel-raised);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 11.5px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .live-dot{ animation: none; }
+  }
+
+  @media (max-width: 480px){
+    .legend{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◐</span>
+      <div>
+        <div class="brand-title">STASIUN PEMANTAUAN</div>
+        <div class="brand-sub">Suhu &amp; Kelembaban Ruangan</div>
+      </div>
+    </div>
+    <div class="status">
+      <span class="live-dot"></span>
+      <span class="live-text">LIVE</span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <section class="gauges-row">
+
+    <div class="gauge-card">
+      <div class="gauge-card-head">
+        <span class="dot dot-temp"></span>
+        <span class="gauge-label">Suhu Udara</span>
+      </div>
+      <svg id="gauge-temp-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+      <div class="gauge-reading">
+        <span id="reading-temp" class="reading-value">--.-</span><span class="reading-unit">°C</span>
+        <span id="trend-temp" class="trend"></span>
+      </div>
+      <div class="gauge-stats">
+        <span>Min <b id="stat-temp-min">--</b></span>
+        <span>Rata-rata <b id="stat-temp-avg">--</b></span>
+        <span>Maks <b id="stat-temp-max">--</b></span>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-card-head">
+        <span class="dot dot-hum"></span>
+        <span class="gauge-label">Kelembaban Relatif</span>
+      </div>
+      <svg id="gauge-hum-svg" viewBox="0 0 220 140" class="gauge-svg"></svg>
+      <div class="gauge-reading">
+        <span id="reading-hum" class="reading-value">--</span><span class="reading-unit">%</span>
+        <span id="trend-hum" class="trend"></span>
+      </div>
+      <div class="gauge-stats">
+        <span>Min <b id="stat-hum-min">--</b></span>
+        <span>Rata-rata <b id="stat-hum-avg">--</b></span>
+        <span>Maks <b id="stat-hum-max">--</b></span>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="chart-card">
+    <div class="chart-head">
+      <div>
+        <div class="eyebrow">TREN</div>
+        <div class="chart-title">Grafik Suhu &amp; Kelembaban</div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="dot dot-temp"></span>Suhu (°C)</span>
+        <span class="legend-item"><span class="dot dot-hum"></span>Kelembaban (%)</span>
+      </div>
+    </div>
+
+    <div class="range-switch" role="group" aria-label="Rentang waktu grafik">
+      <button class="range-btn active" data-range="60">1 Jam</button>
+      <button class="range-btn" data-range="360">6 Jam</button>
+      <button class="range-btn" data-range="1440">24 Jam</button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </section>
+
+  <footer class="footnote">
+    Data pada dasbor ini disimulasikan secara otomatis mengikuti pola harian yang wajar (naik di siang hari, turun di malam hari) agar tampilan grafik terasa hidup. Untuk menghubungkan sensor sungguhan, ganti isi fungsi <code>commitNewPoint()</code> di bagian skrip dengan pemanggilan API/endpoint perangkat Anda (mis. ESP32 + DHT22, atau layanan cloud IoT lainnya).
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- Helpers ----------
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+  function round1(v){ return Math.round(v*10)/10; }
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function formatTime(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+
+  // ---------- Gauge geometry ----------
+  const GAUGE_CX = 110, GAUGE_CY = 118, R_TRACK = 84, R_TICK_OUTER = 84, R_TICK_INNER = 72, R_NEEDLE = 66;
+
+  function polar(cx, cy, r, angleDeg){
+    const a = angleDeg * Math.PI / 180;
+    return { x: cx + r*Math.cos(a), y: cy - r*Math.sin(a) };
+  }
+  function valueToAngle(value, min, max){
+    const f = clamp((value - min) / (max - min), 0, 1);
+    return 180 - f*180;
+  }
+  function describeArc(cx, cy, r, startAngle, endAngle){
+    const s = polar(cx, cy, r, startAngle);
+    const e = polar(cx, cy, r, endAngle);
+    const largeArc = Math.abs(startAngle - endAngle) > 180 ? 1 : 0;
+    return 'M '+s.x.toFixed(2)+' '+s.y.toFixed(2)+' A '+r+' '+r+' 0 '+largeArc+' 1 '+e.x.toFixed(2)+' '+e.y.toFixed(2);
+  }
+
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const GAUGES = {
+    temp: {
+      svgId: 'gauge-temp-svg', needleId: 'needle-temp',
+      min: 0, max: 50, majorStep: 10,
+      zones: [
+        { from:0,  to:15, color: cssVarSafe('--zone-cool') },
+        { from:15, to:28, color: cssVarSafe('--zone-ok') },
+        { from:28, to:50, color: cssVarSafe('--zone-hot') },
+      ],
+    },
+    hum: {
+      svgId: 'gauge-hum-svg', needleId: 'needle-hum',
+      min: 0, max: 100, majorStep: 20,
+      zones: [
+        { from:0,  to:30,  color: cssVarSafe('--zone-dry') },
+        { from:30, to:60,  color: cssVarSafe('--zone-ok') },
+        { from:60, to:100, color: cssVarSafe('--zone-humid') },
+      ],
+    }
+  };
+
+  // cssVar() needs the DOM ready; defer actual color resolution to build time instead
+  function cssVarSafe(name){ return name; } // placeholder replaced at build time below
+
+  function buildGauge(svgEl, cfg){
+    // resolve placeholder colors now that DOM/styles are ready
+    cfg.zones.forEach(z => { z.color = cssVar(z.color); });
+
+    cfg.zones.forEach(z => {
+      const a1 = valueToAngle(z.from, cfg.min, cfg.max);
+      const a2 = valueToAngle(z.to, cfg.min, cfg.max);
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', describeArc(GAUGE_CX, GAUGE_CY, R_TRACK, a1, a2));
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-width', '14');
+      path.setAttribute('style', 'stroke:'+z.color+'; opacity:0.85');
+      svgEl.appendChild(path);
+    });
+
+    for (let v = cfg.min; v <= cfg.max; v += cfg.majorStep){
+      const ang = valueToAngle(v, cfg.min, cfg.max);
+      const p1 = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+6, ang);
+      const p2 = polar(GAUGE_CX, GAUGE_CY, R_TICK_INNER-4, ang);
+      const tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', p1.x.toFixed(2)); tick.setAttribute('y1', p1.y.toFixed(2));
+      tick.setAttribute('x2', p2.x.toFixed(2)); tick.setAttribute('y2', p2.y.toFixed(2));
+      tick.setAttribute('style', 'stroke:var(--text-faint); stroke-width:2');
+      svgEl.appendChild(tick);
+
+      const lp = polar(GAUGE_CX, GAUGE_CY, R_TICK_OUTER+19, ang);
+      const label = document.createElementNS(NS, 'text');
+      label.setAttribute('x', lp.x.toFixed(2));
+      label.setAttribute('y', (lp.y+4).toFixed(2));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('style', 'fill:var(--text-faint); font-family:var(--font-mono); font-size:9px');
+      label.textContent = v;
+      svgEl.appendChild(label);
+    }
+
+    const needle = document.createElementNS(NS, 'line');
+    needle.setAttribute('id', cfg.needleId);
+    needle.setAttribute('x1', GAUGE_CX); needle.setAttribute('y1', GAUGE_CY);
+    needle.setAttribute('x2', GAUGE_CX); needle.setAttribute('y2', GAUGE_CY-R_NEEDLE);
+    needle.setAttribute('style', 'stroke:var(--text-primary); stroke-width:3; stroke-linecap:round');
+    svgEl.appendChild(needle);
+
+    const pivot = document.createElementNS(NS, 'circle');
+    pivot.setAttribute('cx', GAUGE_CX); pivot.setAttribute('cy', GAUGE_CY); pivot.setAttribute('r', 6);
+    pivot.setAttribute('style', 'fill:var(--text-primary)');
+    svgEl.appendChild(pivot);
+  }
+
+  function updateNeedle(cfg, value){
+    const ang = valueToAngle(value, cfg.min, cfg.max);
+    const p = polar(GAUGE_CX, GAUGE_CY, R_NEEDLE, ang);
+    const el = document.getElementById(cfg.needleId);
+    if (el){ el.setAttribute('x2', p.x.toFixed(2)); el.setAttribute('y2', p.y.toFixed(2)); }
+  }
+
+  // ---------- Data simulation ----------
+  const ONE_MIN = 60*1000;
+  let tempDrift = 0, humDrift = 0;
+  let fullData = [];
+  let currentRange = 60; // minutes
+  let chart = null;
+
+  function diurnalTemp(hourFraction){ return 25 + 6.5*Math.sin(2*Math.PI*(hourFraction-8)/24); }
+  function diurnalHum(hourFraction){ return 62 - 18*Math.sin(2*Math.PI*(hourFraction-8)/24); }
+
+  function nextReading(t){
+    const d = new Date(t);
+    const hourFraction = d.getHours() + d.getMinutes()/60;
+
+    tempDrift += (Math.random()-0.5)*0.25;
+    tempDrift = clamp(tempDrift, -2.5, 2.5);
+    humDrift += (Math.random()-0.5)*0.6;
+    humDrift = clamp(humDrift, -6, 6);
+
+    const temp = round1(diurnalTemp(hourFraction) + tempDrift);
+    const hum = Math.round(clamp(diurnalHum(hourFraction) + humDrift, 20, 95));
+    return { t: t, temp: temp, hum: hum };
+  }
+
+  function generateSeedData(nowMs){
+    const POINTS = 24*60;
+    const startMs = nowMs - (POINTS-1)*ONE_MIN;
+    const data = [];
+    for (let i=0; i<POINTS; i++){
+      data.push(nextReading(startMs + i*ONE_MIN));
+    }
+    return data;
+  }
+
+  function computeStats(arr, key){
+    if (!arr.length) return { min:0, max:0, avg:0 };
+    let min=Infinity, max=-Infinity, sum=0;
+    arr.forEach(d => { const v=d[key]; if(v<min)min=v; if(v>max)max=v; sum+=v; });
+    return { min:min, max:max, avg: sum/arr.length };
+  }
+
+  // ---------- Rendering ----------
+  function renderForRange(rangeMinutes){
+    const now = Date.now();
+    const cutoff = now - rangeMinutes*ONE_MIN;
+    const filtered = fullData.filter(d => d.t >= cutoff);
+
+    if (chart){
+      chart.data.labels = filtered.map(d => formatTime(new Date(d.t)));
+      chart.data.datasets[0].data = filtered.map(d => d.temp);
+      chart.data.datasets[1].data = filtered.map(d => d.hum);
+      chart.update('none');
+    }
+
+    const ts = computeStats(filtered, 'temp');
+    const hs = computeStats(filtered, 'hum');
+    document.getElementById('stat-temp-min').textContent = ts.min.toFixed(1)+'°';
+    document.getElementById('stat-temp-avg').textContent = ts.avg.toFixed(1)+'°';
+    document.getElementById('stat-temp-max').textContent = ts.max.toFixed(1)+'°';
+    document.getElementById('stat-hum-min').textContent = Math.round(hs.min)+'%';
+    document.getElementById('stat-hum-avg').textContent = Math.round(hs.avg)+'%';
+    document.getElementById('stat-hum-max').textContent = Math.round(hs.max)+'%';
+  }
+
+  function updateTrend(key, currentVal){
+    const idx = fullData.length - 6; // ~5 menit lalu
+    const prev = fullData[idx] ? fullData[idx][key] : currentVal;
+    const diff = currentVal - prev;
+    const threshold = key === 'temp' ? 0.15 : 1;
+    const el = document.getElementById('trend-'+key);
+    if (!el) return;
+    if (diff > threshold){ el.textContent = '▲'; el.className = 'trend up'; }
+    else if (diff < -threshold){ el.textContent = '▼'; el.className = 'trend down'; }
+    else { el.textContent = '▬'; el.className = 'trend flat'; }
+  }
+
+  function liveTick(){
+    const last = fullData[fullData.length-1];
+    if (!last) return;
+    const jTemp = round1(last.temp + (Math.random()-0.5)*0.4);
+    const jHum = Math.round(clamp(last.hum + (Math.random()-0.5)*1.6, 0, 100));
+
+    document.getElementById('reading-temp').textContent = jTemp.toFixed(1);
+    document.getElementById('reading-hum').textContent = jHum;
+    updateNeedle(GAUGES.temp, jTemp);
+    updateNeedle(GAUGES.hum, jHum);
+    updateTrend('temp', jTemp);
+    updateTrend('hum', jHum);
+  }
+
+  function commitNewPoint(){
+    const now = Date.now();
+    fullData.push(nextReading(now));
+    const keepFrom = now - 25*60*ONE_MIN;
+    fullData = fullData.filter(d => d.t >= keepFrom);
+    renderForRange(currentRange);
+  }
+
+  function tickClock(){
+    const d = new Date();
+    const el = document.getElementById('clock');
+    if (el) el.textContent = pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+
+  // ---------- Init ----------
+  document.addEventListener('DOMContentLoaded', function(){
+    buildGauge(document.getElementById('gauge-temp-svg'), GAUGES.temp);
+    buildGauge(document.getElementById('gauge-hum-svg'), GAUGES.hum);
+
+    fullData = generateSeedData(Date.now());
+
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Suhu (°C)',
+            data: [],
+            borderColor: cssVar('--accent-temp'),
+            backgroundColor: 'rgba(255,139,94,0.12)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.35,
+            fill: true,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Kelembaban (%)',
+            data: [],
+            borderColor: cssVar('--accent-humidity'),
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [4,3],
+            pointRadius: 0,
+            tension: 0.35,
+            fill: false,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: cssVar('--bg-panel-raised'),
+            titleColor: cssVar('--text-primary'),
+            bodyColor: cssVar('--text-primary'),
+            borderColor: cssVar('--border-subtle'),
+            borderWidth: 1,
+            padding: 10,
+            titleFont: { family: "IBM Plex Mono", size: 11 },
+            bodyFont: { family: "IBM Plex Mono", size: 11 }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: cssVar('--text-muted'), font: { family: "IBM Plex Mono", size: 10 }, maxTicksLimit: 8, autoSkip: true },
+            grid: { color: cssVar('--grid-line') }
+          },
+          y: {
+            position: 'left',
+            suggestedMin: 0,
+            suggestedMax: 50,
+            ticks: { color: cssVar('--accent-temp'), font: { family: "IBM Plex Mono", size: 10 }, callback: function(v){ return v+'°'; } },
+            grid: { color: cssVar('--grid-line') }
+          },
+          y1: {
+            position: 'right',
+            suggestedMin: 0,
+            suggestedMax: 100,
+            ticks: { color: cssVar('--accent-humidity'), font: { family: "IBM Plex Mono", size: 10 }, callback: function(v){ return v+'%'; } },
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+
+    renderForRange(currentRange);
+
+    const last = fullData[fullData.length-1];
+    document.getElementById('reading-temp').textContent = last.temp.toFixed(1);
+    document.getElementById('reading-hum').textContent = Math.round(last.hum);
+    updateNeedle(GAUGES.temp, last.temp);
+    updateNeedle(GAUGES.hum, last.hum);
+    updateTrend('temp', last.temp);
+    updateTrend('hum', last.hum);
+
+    tickClock();
+    setInterval(tickClock, 1000);
+    setInterval(liveTick, 4000);
+    setInterval(commitNewPoint, 60000);
+
+    document.querySelectorAll('.range-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.range-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentRange = parseInt(btn.dataset.range, 10);
+        renderForRange(currentRange);
+      });
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
